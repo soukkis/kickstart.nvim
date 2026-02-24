@@ -1,4 +1,5 @@
 --[[
+
 =====================================================================
 ==================== READ THIS BEFORE CONTINUING ====================
 =====================================================================
@@ -165,6 +166,26 @@ vim.o.confirm = true
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
+
+-- File Browsers
+-- open mini.files in directory of current file
+
+vim.keymap.set(
+  'n',
+  '<leader>e',
+  function() require('mini.files').open(vim.api.nvim_buf_get_name(0), true) end,
+  { desc = 'Open mini.files (directory of current file)' }
+)
+
+-- open mini.files in home directory
+
+vim.keymap.set('n', '<leader>E', function() require('mini.files').open(vim.fn.expand '~', true) end, { desc = 'Open mini.files (cwd)' })
+
+-- Using oil's default behavior (current buffer's parent directory)
+vim.keymap.set('n', '<leader>o', '<cmd>Oil<cr>', { desc = 'Open oil (current file)' })
+
+-- Home directory
+vim.keymap.set('n', '<leader>O', function() require('oil').open(vim.fn.expand '~') end, { desc = 'Open oil (home)' })
 
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
@@ -857,20 +878,10 @@ require('lazy').setup({
           -- Whether to use for editing directories
           use_as_default_explorer = true,
         },
-        keys = {
-          {
-            '<leader>e',
-            function() require('mini.Files').open(vim.api.nvim_buf_get_name(0), true) end,
-            desc = 'Open mini.files (directory of current file)',
-          },
-          {
-            '<leader>E',
-            function() require('mini.Files').open(vim.loop.cwd(), true) end,
-            desc = 'Open mini.files (cwd)',
-          },
-        },
         windows = {
+          max_number = 3,
           preview = true,
+          width_preview = 50,
         },
       }
 
@@ -891,6 +902,19 @@ require('lazy').setup({
         callback = function() vim.treesitter.start() end,
       })
     end,
+  },
+
+  -- Oil file browser
+  {
+    'stevearc/oil.nvim',
+    ---@module 'oil'
+    ---@type oil.SetupOpts
+    opts = {},
+    -- Optional dependencies
+    dependencies = { { 'nvim-mini/mini.icons', opts = {} } },
+    -- dependencies = { "nvim-tree/nvim-web-devicons" }, -- use if you prefer nvim-web-devicons
+    -- Lazy loading is not recommended because it is very tricky to make it work correctly in all situations.
+    lazy = false,
   },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
