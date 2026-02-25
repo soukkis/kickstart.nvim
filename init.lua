@@ -1,5 +1,4 @@
 --[[
-
 =====================================================================
 ==================== READ THIS BEFORE CONTINUING ====================
 =====================================================================
@@ -187,6 +186,28 @@ vim.keymap.set('n', '<leader>o', '<cmd>Oil<cr>', { desc = 'Open oil (current fil
 -- Home directory
 vim.keymap.set('n', '<leader>O', function() require('oil').open(vim.fn.expand '~') end, { desc = 'Open oil (home)' })
 
+-- File Browsers END
+--
+
+-- Following links/tags
+
+vim.keymap.set('n', 'gd', '<C-]>', { desc = 'Go to definition/tag' })
+
+-- Deleting buffers
+-- Delete buffer and go to previous
+vim.keymap.set('n', '<leader>bd', function()
+  local buf = vim.api.nvim_get_current_buf()
+  vim.cmd 'bprevious'
+  vim.api.nvim_buf_delete(buf, { force = false })
+end, { desc = 'Delete buffer' })
+
+-- Delete buffer and go to previous
+vim.keymap.set('n', '<leader>bd', function()
+  local buf = vim.api.nvim_get_current_buf()
+  vim.cmd 'bprevious'
+  vim.api.nvim_buf_delete(buf, { force = false })
+end, { desc = 'Delete buffer' })
+
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
@@ -237,6 +258,11 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 -- vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
 -- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
 -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
+
+-- Additional Telescope keymaps
+-- Search through icons
+
+vim.keymap.set('n', '<leader>si', '<cmd>Telescope symbols<cr>', { desc = '[S]earch [I]cons' })
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -333,6 +359,7 @@ require('lazy').setup({
         { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
+        { '<leader>b', group = '[B]uffer', mode = { 'n', 'v' } },
       },
     },
   },
@@ -371,6 +398,9 @@ require('lazy').setup({
         cond = function() return vim.fn.executable 'make' == 1 end,
       },
       { 'nvim-telescope/telescope-ui-select.nvim' },
+
+      -- search icons
+      { 'nvim-telescope/telescope-symbols.nvim' },
 
       -- Useful for getting pretty icons, but requires a Nerd Font.
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
@@ -887,6 +917,74 @@ require('lazy').setup({
 
       require('mini.tabline').setup()
 
+      -- require('mini.bufremove').setup()
+
+      require('mini.sessions').setup()
+
+      require('mini.icons').setup()
+
+      require('mini.jump2d').setup {
+        -- Use single character labels (like flash)
+        labels = 'asdfghjklqwertyuiopzxcvbnm',
+
+        -- Custom highlighting (flash-like colors)
+        mappings = {
+          start_jumping = '', -- We'll use custom keymaps instead
+        },
+
+        -- Silent mode
+        silent = true,
+
+        -- Allowed windows
+        allowed_windows = {
+          current = true,
+          not_current = false,
+        },
+
+        -- Allowed lines
+        allowed_lines = {
+          blank = true,
+          cursor_before = true,
+          cursor_at = true,
+          cursor_after = true,
+          fold = true,
+        },
+
+        -- View options
+        view = {
+          -- Dim background
+          dim = true,
+          -- Number of steps ahead to show
+          n_steps_ahead = 0,
+        },
+
+        -- Hooks for custom behavior
+        hooks = {
+          before_start = function()
+            -- Set flash-like highlights
+            vim.api.nvim_set_hl(0, 'MiniJump2dSpot', { fg = '#ff007c', bold = true, nocombine = true })
+            vim.api.nvim_set_hl(0, 'MiniJump2dSpotAhead', { fg = '#00dfff', bold = true, nocombine = true })
+            vim.api.nvim_set_hl(0, 'MiniJump2dSpotUnique', { fg = '#ff007c', bold = true, underline = true, nocombine = true })
+            vim.api.nvim_set_hl(0, 'MiniJump2dDim', { link = 'Comment' })
+          end,
+        },
+      }
+
+      -- Jump forward (down/anywhere from cursor)
+      vim.keymap.set('n', 't', function() require('mini.jump2d').start(require('mini.jump2d').builtin_opts.single_character) end, { desc = 'Jump2d forward' })
+
+      -- Jump backward (up from cursor)
+      vim.keymap.set('n', 'T', function()
+        local opts = vim.deepcopy(require('mini.jump2d').builtin_opts.single_character)
+        opts.allowed_lines = {
+          blank = true,
+          cursor_before = true, -- Lines before cursor
+          cursor_at = true,
+          cursor_after = false, -- Don't include lines after cursor
+        }
+        require('mini.jump2d').start(opts)
+      end, { desc = 'Jump2d backward' })
+
       -- ... and there is more!
       --  Check out: https://github.com/nvim-mini/mini.nvim
     end,
@@ -894,13 +992,17 @@ require('lazy').setup({
 
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
+    build = ':TSUpdate',
     config = function()
-      local filetypes = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
-      require('nvim-treesitter').install(filetypes)
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = filetypes,
-        callback = function() vim.treesitter.start() end,
-      })
+      -- Manually add to runtime path
+      -- vim.opt.runtimepath:append(vim.fn.stdpath 'data' .. '/lazy/nvim-treesitter')
+
+      -- Now require should work
+      require('nvim-treesitter.config').setup {
+        ensure_installed = { 'bash', 'c', 'lua', 'vim', 'vimdoc', 'markdown' },
+        auto_install = true,
+        highlight = { enable = true },
+      }
     end,
   },
 
@@ -917,6 +1019,28 @@ require('lazy').setup({
     lazy = false,
   },
 
+  require 'custom.plugins.dash',
+
+  -- Session management
+  {
+    'folke/persistence.nvim',
+    event = 'BufReadPre', -- this will only start session saving when an actual file was opened
+    opts = {
+      -- add any custom options here
+    },
+  },
+
+  {
+    'ahmedkhalf/project.nvim',
+    config = function()
+      require('project_nvim').setup {
+        -- your configuration comes here
+        -- or leave it empty to use the default settings
+        -- refer to the configuration section below
+      }
+    end,
+  },
+
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
@@ -931,7 +1055,7 @@ require('lazy').setup({
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
   -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
