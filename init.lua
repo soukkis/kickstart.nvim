@@ -280,6 +280,34 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   callback = function() vim.hl.on_yank() end,
 })
 
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'tex',
+  callback = function()
+    -- Compile
+    vim.keymap.set('n', '<leader>ll', '<cmd>VimtexCompile<cr>', { buffer = true, desc = 'LaTeX: Compile' })
+
+    -- View PDF
+    vim.keymap.set('n', '<leader>lv', '<cmd>VimtexView<cr>', { buffer = true, desc = 'LaTeX: View PDF' })
+
+    -- Clean auxiliary files
+    vim.keymap.set('n', '<leader>lc', '<cmd>VimtexClean<cr>', { buffer = true, desc = 'LaTeX: Clean' })
+
+    -- Show errors
+    vim.keymap.set('n', '<leader>le', '<cmd>VimtexErrors<cr>', { buffer = true, desc = 'LaTeX: Errors' })
+
+    -- Table of contents
+    vim.keymap.set('n', '<leader>lt', '<cmd>VimtexTocToggle<cr>', { buffer = true, desc = 'LaTeX: TOC' })
+
+    -- Enable spell checking for LaTeX
+    vim.opt_local.spell = true
+    vim.opt_local.spelllang = { 'en', 'fi' }
+
+    -- Better wrapping for prose
+    vim.opt_local.wrap = true
+    vim.opt_local.linebreak = true
+  end,
+})
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -334,6 +362,27 @@ require('lazy').setup({
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
+    },
+  },
+
+  {
+    'kdheepak/lazygit.nvim',
+    lazy = true,
+    cmd = {
+      'LazyGit',
+      'LazyGitConfig',
+      'LazyGitCurrentFile',
+      'LazyGitFilter',
+      'LazyGitFilterCurrentFile',
+    },
+    -- optional for floating window border decoration
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+    },
+    -- setting the keybinding for LazyGit with 'keys' is recommended in
+    -- order to load the plugin when the command is run for the first time
+    keys = {
+      { '<leader>gg', '<cmd>LazyGit<cr>', desc = 'LazyGit' },
     },
   },
 
@@ -807,8 +856,12 @@ require('lazy').setup({
         preset = 'default',
         sources = {
           -- Add 'dictionary' to the list
-          default = { 'dictionary', 'lsp', 'path', 'luasnip', 'buffer' },
+          default = { 'dictionary', 'lsp', 'path', 'luasnip', 'buffer', 'vimtex' },
           providers = {
+            vimtex = {
+              name = 'vimtex',
+              module = 'blink.compat.source',
+            },
             dictionary = {
               module = 'blink-cmp-dictionary',
               name = 'Dict',
@@ -859,6 +912,49 @@ require('lazy').setup({
       -- Shows a signature help window while you type arguments for a function
       signature = { enabled = true },
     },
+  },
+
+  --Latex editing
+
+  {
+    'lervag/vimtex',
+    lazy = false, -- Load at startup for .tex files
+    ft = 'tex', -- Only load for .tex files
+    config = function()
+      -- PDF viewer (choose one)
+      vim.g.vimtex_view_method = 'zathura' -- Linux
+      -- vim.g.vimtex_view_method = 'skim'     -- macOS
+      -- vim.g.vimtex_view_method = 'general'  -- Custom
+
+      -- Compiler
+      vim.g.vimtex_compiler_method = 'latexmk'
+
+      -- Quickfix auto-open
+      vim.g.vimtex_quickfix_mode = 0
+
+      -- Disable overfull/underfull warnings
+      vim.g.vimtex_quickfix_ignore_filters = {
+        'Underfull',
+        'Overfull',
+      }
+
+      -- Syntax concealment (makes LaTeX more readable)
+      vim.g.vimtex_syntax_conceal = {
+        accents = 1,
+        ligatures = 1,
+        cites = 1,
+        fancy = 1,
+        spacing = 0,
+        greek = 1,
+        math_bounds = 0,
+        math_delimiters = 1,
+        math_fracs = 1,
+        math_super_sub = 1,
+        math_symbols = 1,
+        sections = 0,
+        styles = 1,
+      }
+    end,
   },
 
   { -- You can easily change to a different colorscheme.
