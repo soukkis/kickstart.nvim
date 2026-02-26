@@ -163,6 +163,10 @@ vim.o.scrolloff = 10
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
+-- Enable spell checking for Finnish
+vim.opt.spell = true
+vim.opt.spelllang = { 'en' } -- English and Finnish
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -302,7 +306,7 @@ rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
   -- NOTE: Plugins can be added via a link or github org/name. To run setup automatically, use `opts = {}`
-  { 'NMAC427/guess-indent.nvim', opts = {} },
+  { 'NMAC427/guess-indent.nvim', event = 'VeryLazy', opts = {} },
 
   -- Alternatively, use `config = function() ... end` for full control over the configuration.
   -- If you prefer to call `setup` explicitly, use:
@@ -321,6 +325,7 @@ require('lazy').setup({
   -- See `:help gitsigns` to understand what the configuration keys do
   { -- Adds git related signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
+    event = 'VeryLazy',
     opts = {
       signs = {
         add = { text = '+' },
@@ -397,10 +402,10 @@ require('lazy').setup({
         -- installed and loaded.
         cond = function() return vim.fn.executable 'make' == 1 end,
       },
-      { 'nvim-telescope/telescope-ui-select.nvim' },
+      { 'nvim-telescope/telescope-ui-select.nvim', event = 'VeryLazy' },
 
       -- search icons
-      { 'nvim-telescope/telescope-symbols.nvim' },
+      { 'nvim-telescope/telescope-symbols.nvim', event = 'VeryLazy' },
 
       -- Useful for getting pretty icons, but requires a Nerd Font.
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
@@ -752,6 +757,7 @@ require('lazy').setup({
     dependencies = {
       -- Snippet Engine
       {
+        'Kaiser-Yang/blink-cmp-dictionary',
         'L3MON4D3/LuaSnip',
         version = '2.*',
         build = (function()
@@ -765,12 +771,10 @@ require('lazy').setup({
           -- `friendly-snippets` contains a variety of premade snippets.
           --    See the README about individual language/framework/plugin snippets:
           --    https://github.com/rafamadriz/friendly-snippets
-          -- {
-          --   'rafamadriz/friendly-snippets',
-          --   config = function()
-          --     require('luasnip.loaders.from_vscode').lazy_load()
-          --   end,
-          -- },
+          {
+            'rafamadriz/friendly-snippets',
+            config = function() require('luasnip.loaders.from_vscode').lazy_load() end,
+          },
         },
         opts = {},
       },
@@ -801,7 +805,26 @@ require('lazy').setup({
         --
         -- See :h blink-cmp-config-keymap for defining your own keymap
         preset = 'default',
-
+        sources = {
+          -- Add 'dictionary' to the list
+          default = { 'dictionary', 'lsp', 'path', 'luasnip', 'buffer' },
+          providers = {
+            dictionary = {
+              module = 'blink-cmp-dictionary',
+              name = 'Dict',
+              -- 💡 Performance impact of min_keyword_length:
+              -- - In fallback mode: No impact on performance regardless of value
+              -- - With fzf: Higher values may improve performance
+              -- - With other commands (rg/grep): Higher values significantly improve performance
+              min_keyword_length = 1,
+              -- options for blink-cmp-dictionary
+              opts = {
+                -- put your dictionary files here
+                -- dictionary_files = {}
+              },
+            },
+          },
+        },
         -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
         --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
       },
@@ -864,7 +887,7 @@ require('lazy').setup({
   },
 
   -- Highlight todo, notes, etc in comments
-  { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
+  { 'folke/todo-comments.nvim', event = 'VeryLazy', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
   { -- Collection of various small independent plugins/modules
     'nvim-mini/mini.nvim',
@@ -1032,6 +1055,7 @@ require('lazy').setup({
 
   {
     'ahmedkhalf/project.nvim',
+    event = 'VeryLazy',
     config = function()
       require('project_nvim').setup {
         -- your configuration comes here
@@ -1040,8 +1064,11 @@ require('lazy').setup({
       }
     end,
   },
+
+  --===MARKDOWN EDITING
   {
     'MeanderingProgrammer/render-markdown.nvim',
+    event = 'VeryLazy',
     dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.nvim' }, -- if you use the mini.nvim suite
     -- dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.icons' },        -- if you use standalone mini plugins
     -- dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' }, -- if you prefer nvim-web-devicons
@@ -1058,9 +1085,12 @@ require('lazy').setup({
 
   {
     'bullets-vim/bullets.vim',
+    event = 'VeryLazy',
   },
 
-  { 'ibutra/checkbox.nvim' },
+  { 'ibutra/checkbox.nvim', event = 'VeryLazy' },
+
+  { 'rafamadriz/friendly-snippets' },
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
